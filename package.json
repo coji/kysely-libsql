@@ -2,14 +2,34 @@
   "name": "@coji/kysely-libsql",
   "version": "0.1.0",
   "description": "kysely diarect for libsql",
+  "repository": {
+    "type": "git",
+    "url": "github:coji/kysely-libsql"
+  },
+  "homepage": "https://github.com/coji/kysely-libsql",
+  "authors": [
+    "MIZOGUCHI Coji <coji@techtalk.jp>"
+  ],
+  "license": "MIT",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/index.cjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/**"
+  ],
   "scripts": {
+    "build": "vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
   "dependencies": {
     "@libsql/client": "^0.5.6"
   },
@@ -18,7 +38,8 @@
     "prettier": "^3.2.5",
     "prettier-plugin-organize-imports": "^3.2.4",
     "typescript": "^5.4.2",
-    "vite": "^5.1.6"
+    "vite": "^5.1.6",
+    "vite-plugin-dts": "^3.7.3"
   },
   "peerDependencies": {
     "kysely": "*"
