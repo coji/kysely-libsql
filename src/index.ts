@@ -22,6 +22,7 @@ export class LibsqlDiarect implements kysely.Dialect {
     return new LibsqlDriver(this.#config.client);
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   createIntrospector(db: kysely.Kysely<any>): kysely.DatabaseIntrospector {
     return new kysely.SqliteIntrospector(db);
   }
@@ -58,7 +59,7 @@ export class LibsqlDriver {
   }
 
   async releaseConnection(connection: LibsqlConnection): Promise<void> {
-    connection.client.close();
+    // nop
   }
 
   async destroy(): Promise<void> {
@@ -87,6 +88,7 @@ export class LibsqlConnection implements kysely.DatabaseConnection {
     };
   }
 
+  // biome-ignore lint/correctness/useYield: <explanation>
   async *streamQuery<R>(
     _compiledQuery: kysely.CompiledQuery,
     _chunkSize: number
