@@ -1,0 +1,26 @@
+{
+  "name": "@coji/kysely-libsql",
+  "version": "0.1.0",
+  "description": "kysely diarect for libsql",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@libsql/client": "^0.5.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.6.1",
+    "prettier": "^3.2.5",
+    "prettier-plugin-organize-imports": "^3.2.4",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.6"
+  },
+  "peerDependencies": {
+    "kysely": "*"
+  }
+}
