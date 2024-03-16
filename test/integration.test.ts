@@ -1,54 +1,54 @@
-import { Kysely, sql } from "kysely";
-import { LibsqlDiarect } from "../src/index";
-import { createClient } from "@libsql/client";
-import { test, expect, describe } from "vitest";
+import { createClient } from '@libsql/client'
+import { Kysely, sql } from 'kysely'
+import { describe, expect, test } from 'vitest'
+import { LibsqlDiarect } from '../src/index'
 
 interface DB {
   book: {
-    id?: number;
-    title: string;
-  };
+    id?: number
+    title: string
+  }
 }
 
 const createKysely = () => {
-  const libsql = createClient({ url: "file:./test/data/test.db" });
+  const libsql = createClient({ url: 'file:./test/data/test.db' })
   const db = new Kysely<DB>({
     dialect: new LibsqlDiarect({ client: libsql }),
-  });
-  return db;
-};
+  })
+  return db
+}
 
 const createTable = async (db: Kysely<DB>) => {
-  await sql`DROP TABLE IF EXISTS book`.execute(db);
+  await sql`DROP TABLE IF EXISTS book`.execute(db)
   await sql`CREATE TABLE book (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT)`.execute(
-    db
-  );
-};
+    db,
+  )
+}
 
 const dropTable = async (db: Kysely<DB>) => {
-  await sql`DROP TABLE book`.execute(db);
-};
+  await sql`DROP TABLE book`.execute(db)
+}
 
-describe("kysely-libsql", () => {
-  test("basic operations", async () => {
-    const db = createKysely();
-    await createTable(db);
+describe('kysely-libsql', () => {
+  test('basic operations', async () => {
+    const db = createKysely()
+    await createTable(db)
 
     const inserted = await db
-      .insertInto("book")
-      .values({ title: "test book" })
-      .execute();
-    expect(inserted.length).toBe(1);
-    expect(inserted[0].numInsertedOrUpdatedRows).toBe(BigInt(1));
+      .insertInto('book')
+      .values({ title: 'test book' })
+      .execute()
+    expect(inserted.length).toBe(1)
+    expect(inserted[0].numInsertedOrUpdatedRows).toBe(BigInt(1))
 
     const selected = await db
-      .selectFrom("book")
-      .select(["id", "title"])
-      .executeTakeFirst();
-    expect(selected?.id).toBe(1);
-    expect(selected?.title).toBe("test book");
+      .selectFrom('book')
+      .select(['id', 'title'])
+      .executeTakeFirst()
+    expect(selected?.id).toBe(1)
+    expect(selected?.title).toBe('test book')
 
-    await dropTable(db);
-    await db.destroy();
-  });
-});
+    await dropTable(db)
+    await db.destroy()
+  })
+})
