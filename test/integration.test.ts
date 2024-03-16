@@ -1,4 +1,4 @@
-import { createClient } from '@libsql/client'
+import { createClient } from '@libsql/client/web'
 import { Kysely } from 'kysely'
 import { describe, expect, test } from 'vitest'
 import { LibsqlDiarect } from '../src/index'
