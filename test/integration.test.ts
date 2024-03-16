@@ -1,54 +1,74 @@
 import { createClient } from '@libsql/client'
-import { Kysely, sql } from 'kysely'
+import { Kysely } from 'kysely'
 import { describe, expect, test } from 'vitest'
 import { LibsqlDiarect } from '../src/index'
+import { createTable, dropTable, type DB } from './utils'
 
-interface DB {
-  book: {
-    id?: number
-    title: string
-  }
-}
-
-const createKysely = () => {
-  const libsql = createClient({ url: 'file:./test/data/test.db' })
+export const createKysely = () => {
+  const libsql = createClient({
+    url: import.meta.env.VITE_DATABASE_URL ?? 'file:./test/data/test.db',
+  })
   const db = new Kysely<DB>({
     dialect: new LibsqlDiarect({ client: libsql }),
   })
   return db
 }
 
-const createTable = async (db: Kysely<DB>) => {
-  await sql`DROP TABLE IF EXISTS book`.execute(db)
-  await sql`CREATE TABLE book (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT)`.execute(
-    db,
-  )
-}
+describe(
+  'kysely-libsql',
+  () => {
+    test('basic operations', async () => {
+      const db = createKysely()
+      await createTable(db)
 
-const dropTable = async (db: Kysely<DB>) => {
-  await sql`DROP TABLE book`.execute(db)
-}
+      const inserted = await db
+        .insertInto('book')
+        .values({ title: 'test book' })
+        .returningAll()
+        .execute()
+      expect(inserted.length).toBe(1)
+      expect(inserted[0].id).toBeTruthy()
 
-describe('kysely-libsql', () => {
-  test('basic operations', async () => {
-    const db = createKysely()
-    await createTable(db)
+      const selected = await db
+        .selectFrom('book')
+        .select(['id', 'title'])
+        .executeTakeFirst()
+      expect(selected?.id).toBe(inserted[0].id)
+      expect(selected?.title).toBe('test book')
 
-    const inserted = await db
-      .insertInto('book')
-      .values({ title: 'test book' })
-      .execute()
-    expect(inserted.length).toBe(1)
-    expect(inserted[0].numInsertedOrUpdatedRows).toBe(BigInt(1))
+      await dropTable(db)
+      await db.destroy()
+    })
 
-    const selected = await db
-      .selectFrom('book')
-      .select(['id', 'title'])
-      .executeTakeFirst()
-    expect(selected?.id).toBe(1)
-    expect(selected?.title).toBe('test book')
+    test('transaction', async () => {
+      const db = createKysely()
+      await createTable(db)
 
-    await dropTable(db)
-    await db.destroy()
-  })
-})
+      const id = await db.transaction().execute(async (txn) => {
+        const { id } = await txn
+          .insertInto('book')
+          .values({
+            title: 'Sense and Sensibility',
+          })
+          .returning('id')
+          .executeTakeFirstOrThrow()
+        return id
+      })
+
+      const book = await db
+        .selectFrom('book')
+        .select(['id', 'title'])
+        .where('book.id', '=', id)
+        .executeTakeFirst()
+
+      expect(book?.id).toBe(id)
+      expect(book?.title).toBe('Sense and Sensibility')
+
+      await dropTable(db)
+      await db.destroy()
+    })
+  },
+  {
+    concurrent: false,
+  },
+)

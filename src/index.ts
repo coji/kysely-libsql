@@ -1,4 +1,4 @@
-import type { InArgs, createClient } from '@libsql/client'
+import type { InArgs, Transaction, createClient } from '@libsql/client'
 import * as kysely from 'kysely'
 
 type Client = ReturnType<typeof createClient>
@@ -47,20 +47,18 @@ export class LibsqlDriver {
     connection: LibsqlConnection,
     _settings: kysely.TransactionSettings,
   ): Promise<void> {
-    await connection.client.execute('BEGIN IMMEDIATE')
+    await connection.beginTransaction()
   }
 
   async commitTransaction(connection: LibsqlConnection): Promise<void> {
-    await connection.client.execute('COMMIT')
+    await connection.commitTransaction()
   }
 
   async rollbackTransaction(connection: LibsqlConnection): Promise<void> {
-    await connection.client.execute('ROLLBACK')
+    await connection.rollbackTransaction()
   }
 
-  async releaseConnection(connection: LibsqlConnection): Promise<void> {
-    // nop
-  }
+  async releaseConnection(connection: LibsqlConnection): Promise<void> {}
 
   async destroy(): Promise<void> {
     this.client.close()
@@ -69,15 +67,43 @@ export class LibsqlDriver {
 
 export class LibsqlConnection implements kysely.DatabaseConnection {
   client: Client
+  txn: Transaction | null
 
   constructor(client: Client) {
     this.client = client
+    this.txn = null
+  }
+
+  async beginTransaction() {
+    if (this.txn) {
+      throw new Error('Transaction already started')
+    }
+    this.txn = await this.client.transaction('write')
+  }
+
+  async commitTransaction() {
+    if (!this.txn) {
+      throw new Error('No transaction to commit')
+    }
+    await this.txn.commit()
+    this.txn.close()
+    this.txn = null
+  }
+
+  async rollbackTransaction() {
+    if (!this.txn) {
+      throw new Error('No transaction to rollback')
+    }
+    await this.txn.rollback()
+    this.txn.close()
+    this.txn = null
   }
 
   async executeQuery<R>(
     compiledQuery: kysely.CompiledQuery,
   ): Promise<kysely.QueryResult<R>> {
-    const resultSet = await this.client.execute({
+    const executor = this.txn ? this.txn : this.client
+    const resultSet = await executor.execute({
       sql: compiledQuery.sql,
       args: compiledQuery.parameters as InArgs,
     })
