@@ -6,7 +6,7 @@ settings:
 
 dependencies:
   '@libsql/client':
-    specifier: ^0.5.6
+    specifier: '*'
     version: 0.5.6
   kysely:
     specifier: '*'
